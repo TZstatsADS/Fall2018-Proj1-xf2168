@@ -618,6 +618,14 @@ Before doing this sentiment analysis, I am confident that they all should be pos
 Exactly, overall the moments are definitely positive and the 25th, 50th, and 75th percentiles across age groups are virtually identical. But the bottom quartile does have negative sentiment. I guess the reason is that some happy moments may poetically arise from discomfort things.
 
 
+###Conclusion:
+Hi, here.
+
+Our journey of exploration is coming to the end. I feel so glad to realize that no matter how old you are, happy moments are always around us. Maybe you will change some hobbies when you get older, maybe you will have more family mombers,more friends. But one thing is elernal, that is the love from your family and friends. I trust that they can give you the most happiest moments forever. 
+
+Thank you for reading ^^
+
+
 ###Reference:
 1.https://www.tidytextmining.com/topicmodeling.html
 
