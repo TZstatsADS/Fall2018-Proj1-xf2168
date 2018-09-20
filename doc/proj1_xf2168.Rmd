@@ -1,0 +1,642 @@
+---
+title: "Happy Moments From Different Age Periods"
+output:
+  html_document:
+    df_print: paged
+  html_notebook:default html_document:default: default
+  word_document: default
+---
+
+
+Happy moments are full of our daily lives, and today we have a chance to dive into a handy dataset that can help shed some light on the fundamentals of happiness. As for me, I am wondering people under different ages would have differnet happy moments or not. So I decide to analyze the happy moments of different age groups. I separate the data into four age groups. 
+
+*First group is people whose age is less an 25 years old. They represent youth such as students.*
+
+*Second group is people who are between 25 to 40 years old.They represent early adulthood.*
+
+*Third group is people with age between 40 to 60 years old. They represent middle adulthood.*
+
+*Fourth group is people whose age is  above 60 years old. They represent the elderly, late adulthood.*
+
+```{r,message=FALSE,echo=FALSE,warning=FALSE}
+###Part0: Load libraries and text data; Separate into four groups
+library(dplyr)
+library(ngram)
+library(tidytext)
+library(ggplot2)
+library(wordcloud)
+library(tidyr)
+library(stringr)
+library(scales)
+library(syuzhet)
+library(tidyverse)
+library(DT)
+library(scales)
+library(wordcloud2)
+library(gridExtra)
+library(tidyr)
+library(igraph)
+library(ggraph)
+```
+
+```{r load data, warning=FALSE, message=FALSE,echo=FALSE}
+hm_data <- read_csv("../output/processed_moments.csv")
+
+urlfile<-'https://raw.githubusercontent.com/rit-public/HappyDB/master/happydb/data/demographic.csv'
+demo_data <- read_csv(urlfile)
+```
+
+
+```{r combining data, warning=FALSE, message=FALSE,echo=FALSE}
+ageframe <- hm_data %>%
+  inner_join(demo_data, by = "wid") %>%
+  select(wid,
+         original_hm,
+         cleaned_hm,
+         gender, 
+         marital, 
+         parenthood,
+         reflection_period,
+         age, 
+         country, 
+         ground_truth_category, 
+         text) %>%
+  mutate(count = sapply(hm_data$text, wordcount)) %>%
+  filter(gender %in% c("m", "f")) %>%
+  filter(marital %in% c("single", "married")) %>%
+  filter(parenthood %in% c("n", "y")) %>%
+  filter(reflection_period %in% c("24h", "3m")) %>%
+  mutate(reflection_period = fct_recode(reflection_period, 
+                                        months_3 = "3m", hours_24 = "24h"))
+```
+
+
+```{r,message=FALSE,echo=FALSE,warning=FALSE}
+ageframe$age= as.numeric(ageframe$age)
+ageframe$text= as.character(ageframe$text)
+ageframe<-ageframe[-which(is.na(ageframe$age)),]
+```
+
+
+```{r,message=FALSE,echo=FALSE,warning=FALSE}
+#We get four groups of data according to different age range
+# Group1__Youth
+age_below25 <- ageframe%>% 
+  filter(age <=25&age>7) %>% 
+  select(wid, cleaned_hm,age,text,count)
+#Group2__Early Adulthood
+age_25to40<- ageframe%>% 
+  filter(age <=40 & age>25) %>% 
+  select(wid, cleaned_hm,age,text,count)
+#Group3__ Middle Adulthood
+age_40to60<-ageframe%>% 
+  filter(age >40&age<=60) %>% 
+  select(wid, cleaned_hm,age,text,count)
+#Group4__ Late Adulthood
+age_above60<-ageframe%>% 
+  filter(age >60&age<100) %>% 
+  select(wid, cleaned_hm,age,text,count)
+```
+
+![](/Users/Anny/Documents/GitHub/Fall2018-Proj1-xf2168/figs/ss.jpg)
+
+
+
+##Part 1: How about their happiness in different age groups?
+*In order to get some basic characteristics of happy moments from these four groups, the word count, word cloud, and bigram network would be analyzed.*
+
+####Word Count
+
+
+*Youth*
+```{r,message=FALSE,echo=FALSE,warning=FALSE}
+## age below 25
+tidy_below25 <- age_below25 %>%
+  unnest_tokens(word, text)
+
+data(stop_words)
+tidy_below25 <- tidy_below25 %>%
+  anti_join(stop_words)
+
+tidy_below25 %>%
+  count(word, sort = TRUE) %>%
+  filter(n > 500) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(word, n)) +
+  geom_col(color="green") +
+  xlab(NULL) +
+  coord_flip()
+```
+
+
+*Early Adulthood*
+```{r,message=FALSE,echo=FALSE,warning=FALSE}
+## age between 25 to 40
+tidy_25to40 <- age_25to40 %>%
+  unnest_tokens(word, text)
+
+data(stop_words)
+tidy_25to40 <- tidy_25to40 %>%
+  anti_join(stop_words)
+
+tidy_25to40 %>%
+  count(word, sort = TRUE) %>%
+  filter(n > 1500) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(word, n)) +
+  geom_col(color="blue") +
+  xlab(NULL) +
+  coord_flip()
+```
+
+
+*Middle Adulthood*
+```{r,message=FALSE,echo=FALSE,warning=FALSE}
+## age 40 to 60
+tidy_40to60 <- age_40to60 %>%
+  unnest_tokens(word, text)
+
+data(stop_words)
+tidy_40to60 <- tidy_40to60 %>%
+  anti_join(stop_words)
+
+tidy_40to60 %>%
+  count(word, sort = TRUE) %>%
+  filter(n > 250) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(word, n)) +
+  geom_col(color="yellow") +
+  xlab(NULL) +
+  coord_flip()
+
+```
+
+
+*Late Adulthood*
+```{r,message=FALSE,echo=FALSE,warning=FALSE}
+## age above 60
+tidy_above60 <- age_above60 %>%
+  unnest_tokens(word, text)
+
+data(stop_words)
+tidy_above60 <- tidy_above60 %>%
+  anti_join(stop_words)
+
+tidy_above60 %>%
+  count(word, sort = TRUE) %>%
+  filter(n > 50) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(word, n)) +
+  geom_col(color="red") +
+  xlab(NULL) +
+  coord_flip()
+```
+
+####Word Cloud
+
+
+*Youth*
+```{r,message=FALSE,echo=FALSE,warning=FALSE}
+tidy_below25 %>%
+  anti_join(stop_words) %>%
+  count(word) %>%
+  with(wordcloud(word, n, max.words = 100,color="dark green"))
+```
+
+
+*Early Adulthood*
+```{r,message=FALSE,echo=FALSE,warning=FALSE}
+tidy_25to40 %>%
+  anti_join(stop_words) %>%
+  count(word) %>%
+  with(wordcloud(word, n, max.words = 100,color="blue"))
+```
+
+
+*Middle Adulthood*
+```{r,message=FALSE,echo=FALSE,warning=FALSE}
+tidy_40to60 %>%
+  anti_join(stop_words) %>%
+  count(word) %>%
+  with(wordcloud(word, n, max.words = 100,color="yellow"))
+```
+
+
+*Late Adulthood*
+```{r,message=FALSE,echo=FALSE,warning=FALSE}
+tidy_above60 %>%
+  anti_join(stop_words) %>%
+  count(word) %>%
+  with(wordcloud(word, n, max.words = 100,colors="red"))
+```
+
+
+
+####Visualizing a network of bigrams with ggraph
+
+So far we’ve considered words as individual units; However, many interesting text analyses are based on the relationships between words. 
+Here I arrange the word groups into a network, as a combination of connected nodes.
+
+It has three variables: 
+
+
+**From**:  the node an edge is coming from
+
+**To**:  the node an edge is going towards
+
+**Weight**:  A numeric value associated with each edge
+
+
+
+**Youth**
+```{r,message=FALSE,echo=FALSE,warning=FALSE}
+below25_bigram<-age_below25 %>%
+   filter(count!=1)  %>%
+   unnest_tokens(bigram,text,token="ngrams",n=2)
+
+below25_counts<-below25_bigram %>%
+   separate(bigram,c("word1","word2"),sep=" ") %>%
+   count(word1,word2,sort=TRUE)
+
+below25_united<-below25_counts %>%
+   unite(bigram,word1,word2,sep=" ")
+   below25_united$group<-"age_below25"
+   
+ bigram_graph1 <- below25_counts %>%
+  filter(n > 50) %>%
+  graph_from_data_frame()
+   
+#set.seed(2017)
+
+#ggraph(bigram_graph1, layout = "fr") +
+  #geom_edge_link() +
+  #geom_node_point() +
+  #geom_node_text(aes(label = name), vjust = 1, hjust = 1)
+
+
+
+set.seed(2016)
+
+a <- grid::arrow(type = "closed", length = unit(.15, "inches"))
+
+ggraph(bigram_graph1, layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
+                 arrow = a, end_cap = circle(.07, 'inches')) +
+  geom_node_point(color = "dark green", size = 5) +
+  geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
+  theme_void()
+   
+```
+
+
+
+**Early Adulthood**
+```{r,message=FALSE,echo=FALSE,warning=FALSE}
+betw25to40_bigram<-age_25to40 %>%
+   filter(count!=1)  %>%
+   unnest_tokens(bigram,text,token="ngrams",n=2)
+
+betw25to40_counts<-betw25to40_bigram %>%
+   separate(bigram,c("word1","word2"),sep=" ") %>%
+   count(word1,word2,sort=TRUE)
+
+betw25to40_united<-betw25to40_counts %>%
+   unite(bigram,word1,word2,sep=" ")
+   betw25to40_united$group<-"age_25to40"
+   
+ bigram_graph2 <- betw25to40_counts %>%
+  filter(n > 70) %>%
+  graph_from_data_frame()
+   
+#set.seed(2017)
+
+#ggraph(bigram_graph2, layout = "fr") +
+  #geom_edge_link() +
+  #geom_node_point() +
+  #geom_node_text(aes(label = name), vjust = 1, hjust = 1)
+
+
+set.seed(2016)
+
+a <- grid::arrow(type = "closed", length = unit(.15, "inches"))
+
+ggraph(bigram_graph2, layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
+                 arrow = a, end_cap = circle(.07, 'inches')) +
+  geom_node_point(color = "blue", size = 5) +
+  geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
+  theme_void()
+   
+```
+
+
+**Middle Adulthood**
+```{r,message=FALSE,echo=FALSE,warning=FALSE}
+betw40to60_bigram<-age_40to60 %>%
+   filter(count!=1)  %>%
+   unnest_tokens(bigram,text,token="ngrams",n=2)
+
+betw40to60_counts<-betw40to60_bigram %>%
+   separate(bigram,c("word1","word2"),sep=" ") %>%
+   count(word1,word2,sort=TRUE)
+
+betw40to60_united<-betw40to60_counts %>%
+   unite(bigram,word1,word2,sep=" ")
+   betw40to60_united$group<-"age_40to60"
+   
+ bigram_graph3 <- betw40to60_counts %>%
+  filter(n > 20) %>%
+  graph_from_data_frame()
+   
+
+#set.seed(2017)
+
+#ggraph(bigram_graph3, layout = "fr") +
+  #geom_edge_link() +
+  #geom_node_point() +
+  #geom_node_text(aes(label = name), vjust = 1, hjust = 1)
+
+set.seed(2016)
+
+a <- grid::arrow(type = "closed", length = unit(.15, "inches"))
+
+ggraph(bigram_graph3, layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
+                 arrow = a, end_cap = circle(.07, 'inches')) +
+  geom_node_point(color = "yellow", size = 5) +
+  geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
+  theme_void()
+   
+```
+
+
+**Late Adulthood**
+```{r,message=FALSE,echo=FALSE,warning=FALSE}
+above60_bigram<-age_above60 %>%
+   filter(count!=1)  %>%
+   unnest_tokens(bigram,text,token="ngrams",n=2)
+
+above60_counts<-above60_bigram %>%
+   separate(bigram,c("word1","word2"),sep=" ") %>%
+   count(word1,word2,sort=TRUE)
+
+above60_united<-above60_counts %>%
+   unite(bigram,word1,word2,sep=" ")
+   above60_united$group<-"age_above60"
+   
+ bigram_graph4 <- above60_counts %>%
+  filter(n > 5) %>%
+  graph_from_data_frame()
+   
+#set.seed(2017)
+
+#ggraph(bigram_graph4, layout = "fr") +
+  #geom_edge_link() +
+  #geom_node_point() +
+  #geom_node_text(aes(label = name), vjust = 1, hjust = 1)
+
+set.seed(2016)
+
+a <- grid::arrow(type = "closed", length = unit(.15, "inches"))
+
+ggraph(bigram_graph4, layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
+                 arrow = a, end_cap = circle(.07, 'inches')) +
+  geom_node_point(color = "red", size = 5) +
+  geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
+  theme_void()
+   
+```
+
+### SUMMARY1:
+We have some interesting moments happened. People usually focus on different things when they under different age periods. As for youth who study at school, they think friends, family, mother's day, watch TV, play games, go to events, have birthday party, hang out with girlfriend/boyfriend or go to school/college can make them happy. 
+
+When people get into early adulthood, they may start getting a job, and many of them get married. They think friends, marriage, family(mother's day, son/daughter, husband/wife), have a birthday party, watch TV, play video game can make them happy.
+
+When people enter middle age, they may have a job for a long time and they feel that family(son/daughter, wife/husband), friends, celebrate birthday party, watch TV, read books, or cook dinner can make them happy.
+
+After they retire, friends and family(son/daughter, wife/husband, grandson/granddaughter) are most important for them, they feel happy when they walk with dog, watch movie, visit or call someone. 
+
+**All in all, we find out that spend time with family/friends, to have mother's day, birthday party, and play/watch games are the most happy moments ever.**
+
+![](/Users/Anny/Documents/GitHub/Fall2018-Proj1-xf2168/figs/hm.png)
+
+
+
+##Part2: Do people have same happy moments?
+*In this part, I apply word frequences to analyze, and using a correlation test to quantify how similar and different these sets of word frequencies, how correlated are the word frequencies.*
+
+####First Round: Youth VS The Elderly
+```{r,message=FALSE,echo=FALSE,warning=FALSE}
+frequency1 <- bind_rows(mutate(tidy_below25, age = "Below25"),
+                       mutate(tidy_above60, age = "Above 60")) %>% 
+  mutate(word = str_extract(word, "[a-z']+")) %>%
+  count(age, word) %>%
+  group_by(age) %>%
+  mutate(proportion = n / sum(n)) %>% 
+  select(-n) %>% 
+  spread(age, proportion) %>% 
+  gather(age, proportion, `Below25`)
+
+ggplot(frequency1, aes(x = proportion, y = `Above 60`, color = abs(`Above 60` - proportion))) +
+  geom_abline(color = "gray40", lty = 2) +
+  geom_jitter(alpha = 0.1, size = 2.5, width = 0.3, height = 0.3) +
+  geom_text(aes(label = word), check_overlap = TRUE, vjust = 1.5) +
+  scale_x_log10(labels = percent_format()) +
+  scale_y_log10(labels = percent_format()) +
+  scale_color_gradient(limits = c(0, 0.001), low = "darkslategray4", high = "gray75") +
+  facet_wrap(~age, ncol = 3) +
+  theme(legend.position="none") +
+  labs(y = "Above 60", x = NULL)
+
+```
+
+Correlation test
+```{r,message=FALSE,echo=FALSE,warning=FALSE}
+cor.test(data = frequency1[frequency1$age == "Below25",],
+         ~ proportion + `Above 60`)
+```
+
+
+####Second Round: Early & Middle Adulthood VS Late Adulthood
+
+```{r,message=FALSE,echo=FALSE,warning=FALSE}
+frequency2 <- bind_rows(mutate(tidy_25to40, age = "Between 25 to 40"),
+                        mutate(tidy_40to60, age = "Between 40 to 60"),
+                        mutate(tidy_above60, age = "Above 60")) %>% 
+  mutate(word = str_extract(word, "[a-z']+")) %>%
+  count(age, word) %>%
+  group_by(age) %>%
+  mutate(proportion = n / sum(n)) %>% 
+  select(-n) %>% 
+  spread(age, proportion) %>% 
+  gather(age, proportion, `Between 25 to 40`:`Between 40 to 60`)
+
+ggplot(frequency2, aes(x = proportion, y = `Above 60`, color = abs(`Above 60` - proportion))) +
+  geom_abline(color = "gray40", lty = 2) +
+  geom_jitter(alpha = 0.1, size = 2.5, width = 0.3, height = 0.3) +
+  geom_text(aes(label = word), check_overlap = TRUE, vjust = 1.5) +
+  scale_x_log10(labels = percent_format()) +
+  scale_y_log10(labels = percent_format()) +
+  scale_color_gradient(limits = c(0, 0.001), low = "darkslategray4", high = "gray75") +
+  facet_wrap(~age, ncol = 3) +
+  theme(legend.position="none") +
+  labs(y = "Above 60", x = NULL)
+```
+
+Correlation test
+```{r,message=FALSE,echo=FALSE,warning=FALSE}
+cor.test(data = frequency2[frequency2$age == "Between 25 to 40",],
+         ~ proportion + `Above 60`)
+
+cor.test(data = frequency2[frequency2$age == "Between 40 to 60",],
+         ~ proportion + `Above 60`)
+```
+
+####Third Round: Youth VS Early & Middle Adulthood
+```{r,message=FALSE,echo=FALSE,warning=FALSE}
+frequency3 <- bind_rows(mutate(tidy_25to40, age = "Between 25 to 40"),
+                        mutate(tidy_40to60, age ="Between 40 to 60"),
+                        mutate(tidy_below25, age = "Below 25")) %>% 
+  mutate(word = str_extract(word, "[a-z']+")) %>%
+  count(age, word) %>%
+  group_by(age) %>%
+  mutate(proportion = n / sum(n)) %>% 
+  select(-n) %>% 
+  spread(age, proportion) %>% 
+  gather(age, proportion, `Between 25 to 40`:`Between 40 to 60`)
+
+ggplot(frequency3, aes(x = proportion, y = `Below 25`, color = abs(`Below 25` - proportion))) +
+  geom_abline(color = "gray40", lty = 2) +
+  geom_jitter(alpha = 0.1, size = 2.5, width = 0.3, height = 0.3) +
+  geom_text(aes(label = word), check_overlap = TRUE, vjust = 1.5) +
+  scale_x_log10(labels = percent_format()) +
+  scale_y_log10(labels = percent_format()) +
+  scale_color_gradient(limits = c(0, 0.001), low = "darkslategray4", high = "gray75") +
+  facet_wrap(~age, ncol = 3) +
+  theme(legend.position="none") +
+  labs(y = "Below 25", x = NULL)
+```
+
+Correlation test
+```{r,message=FALSE,echo=FALSE,warning=FALSE}
+cor.test(data = frequency3[frequency3$age == "Between 25 to 40",],
+         ~ proportion + `Below 25`)
+
+cor.test(data = frequency3[frequency3$age == "Between 40 to 60",],
+         ~ proportion + `Below 25`)
+```
+
+####Fourth Round: Early Adulthood VS Middle Adulthood
+```{r,message=FALSE,echo=FALSE,warning=FALSE}
+frequency4 <- bind_rows(mutate(tidy_25to40, age = "Between 25 to 40"),
+                        mutate(tidy_40to60, age ="Between 40 to 60")) %>% 
+  mutate(word = str_extract(word, "[a-z']+")) %>%
+  count(age, word) %>%
+  group_by(age) %>%
+  mutate(proportion = n / sum(n)) %>% 
+  select(-n) %>% 
+  spread(age, proportion) %>% 
+  gather(age, proportion, `Between 25 to 40`)
+
+ggplot(frequency4, aes(x = proportion, y = `Between 40 to 60`, color = abs(`Between 40 to 60` - proportion))) +
+  geom_abline(color = "gray40", lty = 2) +
+  geom_jitter(alpha = 0.1, size = 2.5, width = 0.3, height = 0.3) +
+  geom_text(aes(label = word), check_overlap = TRUE, vjust = 1.5) +
+  scale_x_log10(labels = percent_format()) +
+  scale_y_log10(labels = percent_format()) +
+  scale_color_gradient(limits = c(0, 0.001), low = "darkslategray4", high = "gray75") +
+  facet_wrap(~age, ncol = 3) +
+  theme(legend.position="none") +
+  labs(y = "Between 40 to 60", x = NULL)
+```
+
+Correlation test
+```{r,message=FALSE,echo=FALSE,warning=FALSE}
+cor.test(data = frequency4[frequency4$age == "Between 25 to 40",],
+         ~ proportion + `Between 40 to 60`)
+```
+
+###SUMMARY2:
+We make a camparison between different age groups to figure out wheater they have same happy moments or not. 
+
+First round, I am interested in comparing people under 25 years old with people whose age is above 60 years old.They have the greatest age difference, and have the lowest correlation.
+From the analysis, we can see that they do not have many common happy moments besides the moment with family or friends. 
+Somewhat surprisingly, walk dog, play golf, garden/yard, neighbor, daughter,granddaughter can make the elderly happy, but young people(students) think that play game, college/class, and girlfriend/boyfriend make them happy.
+
+
+Second round, both of them feel that family(such as daughter), call someone, or buy something can make them happy. Only one thing is different, grandchild appers in the elderly's (age above 60 years old) happy moments. Also, we realize that late adulthood has more higher correlation with middle adulthood than with early adulthood.
+
+Third round, they both think tht have a birthday party makes them happy. But early&middle adulthood also feel that son/daughter or even grandchildren  make them happy, this is the moment youth do not have.
+
+
+Fourth round, early adulthood and middle adulthood may both enter the workforce and have many similar happy moments. Thus, they have the highest correlation.
+
+**Overall, during different age periods, people have different happy moments. If age difference is smaller, they have more similar happy moments because the happy moments's correlation is higher; However, two moments are  important for every age stage: FRIEND and FAMILY/HOME; They make people happy no matter who you are, and no matter how old you are.**
+
+![](/Users/Anny/Documents/GitHub/Fall2018-Proj1-xf2168/figs/happiness.jpg)
+
+
+##Part3: We think that happymoments should all have positive attitude, is it true? 
+*Sentiment analysis weighs the emotional intensity of text and I measure the sentiment of happy moments to see how their intensities vary from different age stages. *
+```{r,message=FALSE,echo=FALSE,warning=FALSE}
+par(mfrow=c(1,5))
+
+# Group1__Youth
+text.1 <- gsub("[\\S]*http\\S+", " ", age_below25$cleaned_hm) 
+text.1 <- gsub("[^A-z'\"]", " ", text.1)
+sentiment.values.1 <- get_sentiment(text.1, method="syuzhet")
+summary(sentiment.values.1)
+boxplot(sentiment.values.1, ylim=c(-5, 20), main="Youth", ylab="Sentiment of Moments")
+
+#Group2__Early Adulthood
+text.2 <- gsub("[\\S]*http\\S+", " ", age_25to40$cleaned_hm) 
+text.2 <- gsub("[^A-z'\"]", " ", text.2)
+sentiment.values.2 <- get_sentiment(text.2, method="syuzhet")
+summary(sentiment.values.2)
+boxplot(sentiment.values.2, ylim=c(-5, 20), main="Early Adulthood", ylab="Sentiment of Moments")
+
+#Group3__Middle Adulthood
+text.3 <- gsub("[\\S]*http\\S+", " ", age_40to60$cleaned_hm) 
+text.3 <- gsub("[^A-z'\"]", " ", text.3)
+sentiment.values.3 <- get_sentiment(text.3, method="syuzhet")
+summary(sentiment.values.3)
+boxplot(sentiment.values.3, ylim=c(-5, 20), main="Middle Adulthood", ylab="Sentiment of Moments")
+
+#Group4__Late Adulthood
+text.4 <- gsub("[\\S]*http\\S+", " ", age_above60$cleaned_hm)
+text.4 <- gsub("[^A-z'\"]", " ", text.4)
+sentiment.values.4 <- get_sentiment(text.4, method="syuzhet")
+summary(sentiment.values.4)
+boxplot(sentiment.values.4, ylim=c(-5, 20), main="Late Adulthood", ylab="Sentiment of Moments")
+
+```
+
+###SUMMARY3:
+Before doing this sentiment analysis, I am confident that they all should be positive since it is the data about happy moments. However, the result surprised me.
+
+Exactly, overall the moments are definitely positive and the 25th, 50th, and 75th percentiles across age groups are virtually identical. But the bottom quartile does have negative sentiment. I guess the reason is that some happy moments may poetically arise from discomfort things.
+
+
+###Reference:
+1.https://www.tidytextmining.com/topicmodeling.html
+
+2.https://medium.freecodecamp.org/a-data-scientists-guide-to-happiness-findings-from-the-happy-experiences-of-10-000-humans-fc02b5c8cbc1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
