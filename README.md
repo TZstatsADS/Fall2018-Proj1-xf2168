@@ -9,10 +9,13 @@ This is the first and only *individual* (as opposed to *team*) this semester.
 
 Term: Fall 2018
 
-+ Projec title: Lorem ipsum dolor sit amet
-+ This project is conducted by [your name]
++ Projec title: Happy Moments From Different Age Periods
++ This project is conducted by Xinwei Feng
 
-+ Project summary: [a short summary] Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
++ Project summary: Happy moments are full of our daily lives. When people enter different age periods,they may have different attitude or mood to experience their moments. Are you curious if they have same happy moments or not? If yes, how similar they are? If not, what is the difference? 
+Let's open this [happy blog](file:///Users/Anny/Documents/GitHub/Fall2018-Proj1-xf2168/doc/proj1_xf2168.html)to explore their happy moments^^
+
+
 
 Following [suggestions](http://nicercode.github.io/blog/2013-04-05-projects/) by [RICH FITZJOHN](http://nicercode.github.io/about/#Team) (@richfitz). This folder is orgarnized as follows.
 
